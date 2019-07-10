@@ -1,5 +1,5 @@
 {
-  "name": "router/mererouter",
+  "name": "rudovskiypo/mererouter",
   "type": "library",
   "description": "Lightweight PHP router",
   "keywords": ["router", "mererouter"],
@@ -15,7 +15,7 @@
   },
   "autoload": {
     "psr-4" : {
-      "MereRouter\\" : "src/"
+      "RudovskiyPO\\" : "src/"
     }
   }
 }
