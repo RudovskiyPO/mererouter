@@ -1,0 +1,21 @@
+{
+  "name": "router/mererouter",
+  "type": "library",
+  "description": "Lightweight PHP router",
+  "keywords": ["router", "mererouter"],
+  "authors": [
+    {
+      "name": "Petro Rudovskiy",
+      "email": "petrrudovsky@gmail.com",
+      "role": "Author"
+    }
+  ],
+  "require": {
+    "php": "7.*"
+  },
+  "autoload": {
+    "psr-4" : {
+      "MereRouter\\" : "src/"
+    }
+  }
+}

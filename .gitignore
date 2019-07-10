@@ -1,0 +1,7 @@
+.gulp/
+.idea/
+.vscode/
+.phpintel/
+composer.lock
+/vendor/
+/logs/
