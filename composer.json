@@ -11,8 +11,15 @@
     }
   ],
   "require": {
-    "php": "7.*"
+    "php": "7.*",
+    "rudovskiypo/mereuri": "dev-master"
   },
+  "repositories": [
+    {
+      "type": "git",
+      "url": "https://github.com/RudovskiyPO/mereuri"
+    }
+  ],
   "autoload": {
     "psr-4" : {
       "RudovskiyPO\\" : "src/"
