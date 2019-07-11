@@ -1,4 +1,4 @@
-# Mere router
+# Mere Router
 
 ## Install with Composer
 This must be in your composer.json:
@@ -20,7 +20,7 @@ require $pathToComposerAutoload;
 use RudovskiyPO\Router as Router;
 
 // Controller class should inherit \RudovskiyPO\Controller
-$router = new RudovskiyPO\Router(
+$router = new Router(
     [
         '^' => [
             '/$' => [
