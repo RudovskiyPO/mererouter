@@ -3,6 +3,7 @@
   "type": "library",
   "description": "Lightweight PHP router",
   "keywords": ["router", "mererouter"],
+  "license": "MIT",
   "authors": [
     {
       "name": "Petro Rudovskiy",
@@ -18,4 +19,4 @@
       "petrorud\\" : "src/"
     }
   }
-}
+},
