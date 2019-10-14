@@ -1,17 +1,16 @@
 # Mere Router
 
 ## Install with Composer
-This must be in your composer.json:
+Just run:
+```
+composer require petrorud/mererouter
+```
+
+Or add to your composer.json:
 ```json
 "require": {
     "petrorud/mererouter": "dev-master"
-},
-"repositories": [
-    {
-        "type": "git",
-        "url": "https://github.com/RudovskiyPO/mererouter"
-    }
-]
+}
 ```
 
 ## Simple sample
