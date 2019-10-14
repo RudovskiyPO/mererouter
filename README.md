@@ -4,7 +4,7 @@
 This must be in your composer.json:
 ```json
 "require": {
-    "rudovskiypo/mererouter": "dev-master"
+    "petrorud/mererouter": "dev-master"
 },
 "repositories": [
     {
