@@ -1,10 +1,11 @@
 <?php
 
-namespace RudovskiyPO;
+namespace petrorud;
 
 class Router
 {
     private $routes;
+    private $routesTree;
     private $configs;
 
     public function __construct($routesTree, array $configs = [])
@@ -20,6 +21,7 @@ class Router
                 'Wrong routes type: ' . gettype($routesTree) . '. Allowed only array or path to file with array.'
             );
         }
+        $this->routesTree = $routesTree;
 
         $this->buildRoutes($routesTree);
         $this->parseRoutes();
@@ -30,7 +32,6 @@ class Router
         $br = function ($parentRegex, $branches) use (&$br) {
             foreach ($branches as $regex => $leaf) {
                 $concatenatedRegex = empty($parentRegex) ? $regex : $parentRegex . $regex;
-
                 if (substr($concatenatedRegex, -1) == '$') {
                     $this->routes[$concatenatedRegex] = $leaf;
                 } else {
@@ -52,7 +53,6 @@ class Router
 
             if (strpos($pathPattern, '{')) {
                 preg_match_all('~{(\w+)}~', $pathPattern, $matchedAttrs, PREG_SET_ORDER);
-
                 foreach ($matchedAttrs as $attr) {
                     $regex = str_replace($attr[0], "($attrNamePattern+)", $regex);
                     $attrs[] = $attr[1];
@@ -64,55 +64,36 @@ class Router
         }
     }
 
-    public function run($params = [])
+    public function run($options = [])
     {
-        $uri = new URI();
         $requestMethod = $_SERVER['REQUEST_METHOD'];
+        $path = self::getPath();
 
         foreach ($this->routes as $route) {
-            if (preg_match("~{$route['regex']}~", $uri->getPath(), $matches)) {
-                // Get leaf data
-                $leaf = $route[$requestMethod] ?? null;
-                if (empty($leaf)) {
+            if (preg_match("~{$route['regex']}~", $path, $matches)) {
+                $callable = $route[$requestMethod] ?? null;
+                if (empty($callable)) {
                     continue;
                 }
 
-                // Get params
                 array_shift($matches);
                 $attrs = array_combine($route['attrs'], $matches);
-                $params = $uri->getParamsMap() + $attrs;
+                $params = $_GET + $attrs;
 
-                // Init controller
-                $controllerName = $leaf['controller'];
-                if (!class_exists($controllerName)) {
-                    throw new \Exception("Class '$controllerName' not found. Maybe this class was not included.");
-                }
-
-                $controller = new $controllerName([
-                    'Routes' => $this->routes,
-                    'Attrs' => $params,
-                    'Configs' => $this->configs,
+                call_user_func($callable, [
+                    'current_route_regex' => $route['regex'],
+                    'attrs' => $params,
+                    'configs' => $this->configs,
                 ]);
-                if (!$controller instanceof Controller) {
-                    throw new \Exception("Class $controllerName is not instance of Controller.");
-                }
 
-                // Run controller
-                $controllerMethodName = $leaf['action'];
-                if (!method_exists($controller, $controllerMethodName)) {
-                    throw new \Exception("Method '$controllerMethodName' does not defined in class '$controllerName'.");
-                }
-
-                call_user_func(array($controller, $controllerMethodName), $params);
                 return;
             }
         }
 
-        if (isset($params['NotFound']) && is_callable($params['NotFound'])) {
-            call_user_func($params['NotFound'], [
-                'Routes' => $this->routes,
-                'Attrs' => $uri->getParamsMap(),
-                'Configs' => $this->configs,
+        if (isset($options['not_found']) && is_callable($options['not_found'])) {
+            call_user_func($options['not_found'], [
+                'attrs' => $_GET,
+                'configs' => $this->configs,
             ]);
         } else {
             http_response_code(404);
@@ -122,29 +103,16 @@ class Router
 
     public function runMiddlewares(array $middlewares)
     {
-        foreach ($middlewares as $middlewareName) {
-            if (!class_exists($middlewareName)) {
-                throw new \Exception("Class '$middlewareName' not found. Maybe this class was not included.");
-            }
-
-            $middleware = new $middlewareName($this->configs);
-            if (!($middleware instanceof Middleware)) {
-                throw new \Exception("Class $middlewareName is not instance of Middleware.");
-            }
-
-            if (!method_exists($middleware, 'run')) {
-                throw new \Exception("Method 'run' does not defined in class '$middlewareName'.");
-            }
-
-            call_user_func(array($middleware, 'run'));
+        foreach ($middlewares as $callable) {
+            call_user_func($callable, [
+                'attrs' => $_GET,
+                'configs' => $this->configs,
+            ]);
         }
     }
 
-    public static function makeLeaf($controller, $action)
+    public static function getPath():string
     {
-        return [
-            'controller' => $controller,
-            'action' => $action
-        ];
+        return parse_url($_SERVER['REQUEST_URI'])['path'] ?? '';
     }
 }

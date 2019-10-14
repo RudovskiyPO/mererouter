@@ -1,5 +1,5 @@
 {
-  "name": "rudovskiypo/mererouter",
+  "name": "petrorud/mererouter",
   "type": "library",
   "description": "Lightweight PHP router",
   "keywords": ["router", "mererouter"],
@@ -11,18 +11,11 @@
     }
   ],
   "require": {
-    "php": "7.*",
-    "rudovskiypo/mereuri": "dev-master"
+    "php": "7.*"
   },
-  "repositories": [
-    {
-      "type": "git",
-      "url": "https://github.com/RudovskiyPO/mereuri"
-    }
-  ],
   "autoload": {
     "psr-4" : {
-      "RudovskiyPO\\" : "src/"
+      "petrorud\\" : "src/"
     }
   }
 }
