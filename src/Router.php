@@ -80,18 +80,16 @@ class Router
                 $attrs = array_combine($route['attrs'], $matches);
                 $params = $_GET + $attrs;
 
-                call_user_func($callable, [
+                return call_user_func($callable, [
                     'current_route_regex' => $route['regex'],
                     'attrs' => $params,
                     'configs' => $this->configs,
                 ]);
-
-                return;
             }
         }
 
         if (isset($options['not_found']) && is_callable($options['not_found'])) {
-            call_user_func($options['not_found'], [
+            return call_user_func($options['not_found'], [
                 'attrs' => $_GET,
                 'configs' => $this->configs,
             ]);
