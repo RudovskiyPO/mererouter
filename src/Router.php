@@ -62,6 +62,15 @@ class Router
             $this->routes[$pathPattern]['regex'] = $regex;
             $this->routes[$pathPattern]['attrs'] = $attrs;
         }
+        
+        uasort($this->routes, function ($a, $b) {
+            if (empty($a['attrs']) && !empty($b['attrs'])) {
+                return -1;
+            } elseif (empty($b['attrs']) && !empty($a['attrs'])) {
+                return 1;
+            }
+            return 0;
+        });
     }
 
     public function run($options = [])
