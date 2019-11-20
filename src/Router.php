@@ -4,7 +4,7 @@ namespace petrorud;
 
 class Router
 {
-    private $routes;
+    public $routes;
     private $routesTree;
     private $configs;
 
