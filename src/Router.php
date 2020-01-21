@@ -4,36 +4,42 @@ namespace petrorud;
 
 class Router
 {
-    public $routes;
-    private $routesTree;
-    private $configs;
+    public static $routes = [];
+    public static $routesTree = [];
+    private static $configs = [];
 
-    public function __construct($routesTree, array $configs = [])
+    public static function setConfigs(array $configs)
     {
-        $this->configs = $configs;
-
-        if (is_string($routesTree) && file_exists($routesTree)) {
-            $routesTree = require_once($routesTree);
-        }
-
-        if (!is_array($routesTree)) {
-            throw new \Exception(
-                'Wrong routes type: ' . gettype($routesTree) . '. Allowed only array or path to file with array.'
-            );
-        }
-        $this->routesTree = $routesTree;
-
-        $this->buildRoutes($routesTree);
-        $this->parseRoutes();
+        self::$configs = $configs;
     }
 
-    private function buildRoutes($routesTree)
+    public static function setRoutesTree($tree)
+    {
+        if (is_string($tree) && file_exists($tree)) {
+            $tree = require_once($tree);
+        }
+
+        if (!is_array($tree)) {
+            throw new \Exception(
+                'Wrong routes type: ' . gettype($tree) . '. Allowed only array or path to file with array.'
+            );
+        }
+        self::$routesTree = $tree;
+
+        self::buildRoutes(self::$routesTree);
+    }
+
+    private static function buildRoutes($routesTree)
     {
         $br = function ($parentRegex, $branches) use (&$br) {
             foreach ($branches as $regex => $leaf) {
                 $concatenatedRegex = empty($parentRegex) ? $regex : $parentRegex . $regex;
-                if (substr($concatenatedRegex, -1) == '$') {
-                    $this->routes[$concatenatedRegex] = $leaf;
+
+                if (count($leaf) === 1 && in_array(':', array_keys($leaf))) {
+                    self::$routes[$concatenatedRegex] = [];
+                    foreach ($leaf[':'] as $action) {
+                        self::addActionToRoutes($concatenatedRegex, $action);
+                    }
                 } else {
                     $br($concatenatedRegex, $leaf);
                 }
@@ -43,11 +49,16 @@ class Router
         $br(null, $routesTree);
     }
 
-    private function parseRoutes()
+    public static function registerRoute(string $regex, callable $callable, $methods = 'GET')
+    {
+        self::addActionToRoutes($regex, self::action($callable, $methods));
+    }
+
+    private static function parseRoutes()
     {
         $attrNamePattern = '[A-Za-z0-9_-]';
 
-        foreach ($this->routes as $pathPattern => $route) {
+        foreach (self::$routes as $pathPattern => $route) {
             $regex = $pathPattern;
             $attrs = [];
 
@@ -59,11 +70,11 @@ class Router
                 }
             }
 
-            $this->routes[$pathPattern]['regex'] = $regex;
-            $this->routes[$pathPattern]['attrs'] = $attrs;
+            self::$routes[$pathPattern]['regex'] = $regex;
+            self::$routes[$pathPattern]['attrs'] = $attrs;
         }
-        
-        uasort($this->routes, function ($a, $b) {
+
+        uasort(self::$routes, function ($a, $b) {
             if (empty($a['attrs']) && !empty($b['attrs'])) {
                 return -1;
             } elseif (empty($b['attrs']) && !empty($a['attrs'])) {
@@ -73,12 +84,14 @@ class Router
         });
     }
 
-    public function run($options = [])
+    public static function run($options = [])
     {
+        self::parseRoutes();
+
         $requestMethod = $_SERVER['REQUEST_METHOD'];
         $path = self::getPath();
 
-        foreach ($this->routes as $route) {
+        foreach (self::$routes as $route) {
             if (preg_match("~{$route['regex']}~", $path, $matches)) {
                 $callable = $route[$requestMethod] ?? null;
                 if (empty($callable)) {
@@ -92,7 +105,7 @@ class Router
                 return call_user_func($callable, [
                     'current_route_regex' => $route['regex'],
                     'attrs' => $params,
-                    'configs' => $this->configs,
+                    'configs' => self::$configs,
                 ]);
             }
         }
@@ -100,7 +113,7 @@ class Router
         if (isset($options['not_found']) && is_callable($options['not_found'])) {
             return call_user_func($options['not_found'], [
                 'attrs' => $_GET,
-                'configs' => $this->configs,
+                'configs' => self::$configs,
             ]);
         } else {
             http_response_code(404);
@@ -108,18 +121,49 @@ class Router
         }
     }
 
-    public function runMiddlewares(array $middlewares)
+    public static function runMiddlewares(array $middlewares)
     {
         foreach ($middlewares as $callable) {
             call_user_func($callable, [
                 'attrs' => $_GET,
-                'configs' => $this->configs,
+                'configs' => self::$configs,
             ]);
         }
     }
 
-    public static function getPath():string
+    public static function getPath() :string
     {
         return parse_url($_SERVER['REQUEST_URI'])['path'] ?? '';
+    }
+
+    public static function action(callable $callable, $methods = 'GET'): array
+    {
+        if (is_string($methods)) {
+            $methods = [$methods];
+        }
+
+        return [
+            'callable' => $callable,
+            'methods' => $methods,
+        ];
+    }
+
+    private static function addActionToRoutes(string $regex, $action)
+    {
+        if (self::validateAction($action)) {
+            foreach ($action['methods'] as $method) {
+                $method = strtoupper($method);
+                if (isset(self::$routes[$regex][$method])) {
+                    throw new \Exception("Route [$method $regex] already registered");
+                }
+                self::$routes[$regex][$method] = $action['callable'];
+            }
+        }
+    }
+
+    private static function validateAction($action): bool
+    {
+        return !empty($action['methods']) && is_array($action['methods'])
+            && !empty($action['callable']) && is_callable($action['callable']);
     }
 }
