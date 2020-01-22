@@ -4,6 +4,7 @@ namespace petrorud;
 
 class Router
 {
+    public static $ATTR_NAME_PATTERN = '[A-Za-z0-9_-]';
     public static $routes = [];
     public static $routesTree = [];
     private static $configs = [];
@@ -56,7 +57,7 @@ class Router
 
     private static function parseRoutes()
     {
-        $attrNamePattern = '[A-Za-z0-9_-]';
+        $attrNamePattern = self::$ATTR_NAME_PATTERN;
 
         foreach (self::$routes as $pathPattern => $route) {
             $regex = $pathPattern;
