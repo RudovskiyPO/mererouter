@@ -61,18 +61,15 @@ class Router
 
         foreach (self::$routes as $pathPattern => $route) {
             $regex = $pathPattern;
-            $attrs = [];
 
             if (strpos($pathPattern, '{')) {
                 preg_match_all('~{(\w+)}~', $pathPattern, $matchedAttrs, PREG_SET_ORDER);
                 foreach ($matchedAttrs as $attr) {
-                    $regex = str_replace($attr[0], "($attrNamePattern+)", $regex);
-                    $attrs[] = $attr[1];
+                    $regex = str_replace($attr[0], "(?P<{$attr[1]}>{$attrNamePattern}+)", $regex);
                 }
             }
 
             self::$routes[$pathPattern]['regex'] = $regex;
-            self::$routes[$pathPattern]['attrs'] = $attrs;
         }
 
         uasort(self::$routes, function ($a, $b) {
@@ -99,8 +96,7 @@ class Router
                     continue;
                 }
 
-                array_shift($matches);
-                $attrs = array_combine($route['attrs'], $matches);
+                $attrs = array_filter($matches, "is_string", ARRAY_FILTER_USE_KEY);
                 $params = $_GET + $attrs;
 
                 return call_user_func($callable, [
@@ -120,6 +116,8 @@ class Router
             http_response_code(404);
             echo "<h1>404. Not Found</h1>";
         }
+
+        return false;
     }
 
     public static function runMiddlewares(array $middlewares)
