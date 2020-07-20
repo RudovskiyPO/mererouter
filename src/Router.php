@@ -61,15 +61,18 @@ class Router
 
         foreach (self::$routes as $pathPattern => $route) {
             $regex = $pathPattern;
+            $attrs = [];
 
             if (strpos($pathPattern, '{')) {
                 preg_match_all('~{(\w+)}~', $pathPattern, $matchedAttrs, PREG_SET_ORDER);
                 foreach ($matchedAttrs as $attr) {
                     $regex = str_replace($attr[0], "(?P<{$attr[1]}>{$attrNamePattern}+)", $regex);
+                    $attrs[] = $attr[1];
                 }
             }
 
             self::$routes[$pathPattern]['regex'] = $regex;
+            self::$routes[$pathPattern]['attrs'] = $attrs;
         }
 
         uasort(self::$routes, function ($a, $b) {
