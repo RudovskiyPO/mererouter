@@ -122,10 +122,15 @@ Router::runMiddlewares([
     }
 ]);
 
+// You can also set some options
 Router::run([
-    // You can also specify action for "Not Found 404" case
+    // specify action for "Not Found 404" case ('not_found')
     'not_found' => function($params) {
         http_response_code(404);
-    }
+    },
+    // manage routes sorting by your own ('sort')
+    'sort' => function ($a, $b) {
+        return strlen($b['regex']) <=> strlen($a['regex']);
+    },
 ]);
 ```
