@@ -55,7 +55,7 @@ class Router
         self::addActionToRoutes($regex, self::action($callable, $methods));
     }
 
-    private static function parseRoutes(callable $sort = null)
+    private static function parseRoutes($sort = null)
     {
         $attrNamePattern = self::$ATTR_NAME_PATTERN;
 
@@ -75,17 +75,19 @@ class Router
             self::$routes[$pathPattern]['attrs'] = $attrs;
         }
 
-        if (!is_null($sort) && is_callable($sort)) {
-            uasort(self::$routes, $sort);
-        } else {
-            uasort(self::$routes, function ($a, $b) {
-                if (empty($a['attrs']) && !empty($b['attrs'])) {
-                    return -1;
-                } elseif (empty($b['attrs']) && !empty($a['attrs'])) {
-                    return 1;
-                }
-                return 0;
-            });
+        if (!empty($sort)) {
+            if (is_callable($sort)) {
+                uasort(self::$routes, $sort);
+            } else {
+                uasort(self::$routes, function ($a, $b) {
+                    if (empty($a['attrs']) && !empty($b['attrs'])) {
+                        return -1;
+                    } elseif (empty($b['attrs']) && !empty($a['attrs'])) {
+                        return 1;
+                    }
+                    return 0;
+                });
+            }
         }
     }
 
